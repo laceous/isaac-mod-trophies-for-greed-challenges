@@ -1,0 +1,1 @@
+# isaac-mod-trophies-for-greed-challenges
