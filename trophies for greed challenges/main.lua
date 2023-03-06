@@ -2,7 +2,6 @@ local mod = RegisterMod('Trophies for Greed Challenges', 1)
 local game = Game()
 
 mod.exitRoomIndex = 110 -- exit room
-mod.spiderWebIndex = 67 -- center of 1x1 room
 mod.allowTrophySpawn = false
 
 function mod:onGameExit()
@@ -15,14 +14,12 @@ function mod:onNewRoom()
     
     local level = game:GetLevel()
     local room = level:GetCurrentRoom()
+    local roomDesc = level:GetCurrentRoomDesc()
     
-    if level:GetCurrentRoomIndex() == mod.exitRoomIndex then
-      local gridEntity = room:GetGridEntity(mod.spiderWebIndex)
-      if gridEntity and gridEntity:GetType() == GridEntityType.GRID_SPIDERWEB then -- there will be a spiderweb here instead of a trapdoor
-        room:RemoveGridEntity(mod.spiderWebIndex, 0, false)
-        
+    if roomDesc.GridIndex == mod.exitRoomIndex and room:GetType() == RoomType.ROOM_GREED_EXIT then
+      if not mod:hasTrapdoor() then
         if room:IsClear() then
-          mod:spawnTrophy(room:GetGridPosition(mod.spiderWebIndex))
+          mod:spawnTrophy(Isaac.GetFreeNearPosition(room:GetCenterPos(), 3))
         else
           mod.allowTrophySpawn = true
         end
@@ -35,9 +32,10 @@ function mod:onUpdate()
   if mod:isGreedChallenge() then
     local level = game:GetLevel()
     local room = level:GetCurrentRoom()
+    local roomDesc = level:GetCurrentRoomDesc()
     
-    if level:GetCurrentRoomIndex() == mod.exitRoomIndex and mod.allowTrophySpawn and room:IsClear() then
-      mod:spawnTrophy(room:GetGridPosition(mod.spiderWebIndex))
+    if mod.allowTrophySpawn and roomDesc.GridIndex == mod.exitRoomIndex and room:GetType() == RoomType.ROOM_GREED_EXIT and room:IsClear() then
+      mod:spawnTrophy(Isaac.GetFreeNearPosition(room:GetCenterPos(), 3))
       mod.allowTrophySpawn = false
     end
   end
@@ -51,9 +49,24 @@ function mod:onPickupInit(pickup)
   end
 end
 
+function mod:hasTrapdoor()
+  local room = game:GetRoom()
+  
+  for _, v in ipairs({ 16, 31, 46, 61, 76, 91, 106 }) do -- 1x1 exit room
+    for i = v, v + 12 do
+      local gridEntity = room:GetGridEntity(i)
+      if gridEntity and gridEntity:GetType() == GridEntityType.GRID_TRAPDOOR then -- variants: 0 = normal, 1 = void portal (not used in greed mode)
+        return true
+      end
+    end
+  end
+  
+  return false
+end
+
 function mod:spawnTrophy(position)
   if #Isaac.FindByType(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_TROPHY, 0, false, false) == 0 then
-    Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_TROPHY, 0, position, Vector(0,0), nil)
+    Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_TROPHY, 0, position, Vector.Zero, nil)
   end
 end
 
