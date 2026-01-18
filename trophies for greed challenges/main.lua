@@ -107,7 +107,11 @@ function mod:clearTrapdoorIndexes()
 end
 
 function mod:isGreedChallenge()
-  return game:IsGreedMode() and Isaac.GetChallenge() ~= Challenge.CHALLENGE_NULL
+  return game:IsGreedMode() and
+         (
+           Isaac.GetChallenge() ~= Challenge.CHALLENGE_NULL or
+           (REPENTOGON and game:GetSeeds():IsCustomRun() and DailyChallenge.GetChallengeParams():GetEndStage() > 0)
+         )
 end
 
 mod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, mod.onGameExit)
